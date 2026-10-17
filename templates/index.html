@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Health App</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f8fafc;
+            color: #172554;
+        }
+
+        nav {
+            background: white;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        nav h2 {
+            margin: 0;
+            color: #2563eb;
+        }
+
+        nav span {
+            color: #059669;
+            font-weight: bold;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 35px auto;
+            padding: 0 24px;
+        }
+
+        .hero {
+            padding: 38px;
+            background: linear-gradient(120deg, #dbeafe, #eff6ff);
+            border-radius: 18px;
+            margin-bottom: 26px;
+        }
+
+        .hero h1 {
+            font-size: 34px;
+            margin: 0 0 12px;
+        }
+
+        .hero p {
+            color: #475569;
+            line-height: 1.7;
+        }
+
+        .status {
+            display: inline-block;
+            background: #dcfce7;
+            color: #15803d;
+            padding: 10px 16px;
+            border-radius: 25px;
+            font-weight: bold;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px #0f172a08;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .card strong {
+            font-size: 25px;
+            display: block;
+            margin: 18px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .health-section {
+            margin-top: 35px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 25px;
+        }
+
+        .health-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #86efac;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            line-height: 1.7;
+            margin-top: 22px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        @media (max-width: 750px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 27px;
+            }
+
+            .hero {
+                padding: 25px;
+            }
+
+            nav {
+                padding: 18px 5%;
+            }
+
+            main {
+                padding: 0 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h2>🍃 Flask Health App</h2>
+        <span>● Application Running</span>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <h1>Flask Health Dashboard</h1>
+            <p>
+                Monitor your application running inside a Docker container.
+                Learn application monitoring and container troubleshooting.
+            </p>
+            <div class="status">✓ Application is running!</div>
+        </section>
+
+        <section class="cards">
+            <div class="card">
+                <h3>APPLICATION</h3>
+                <strong>Flask App</strong>
+                <p>Version: 1.0</p>
+                <p>Status: <span style="color:#059669">Healthy</span></p>
+            </div>
+
+            <div class="card">
+                <h3>CONTAINER UPTIME</h3>
+                <strong id="uptime">Loading...</strong>
+                <p>Time since application started</p>
+            </div>
+
+            <div class="card">
+                <h3>SERVER TIME (UTC)</h3>
+                <strong id="server-time" style="font-size:18px">
+                    Loading...
+                </strong>
+                <p>Application server timestamp</p>
+            </div>
+        </section>
+
+        <section class="health-section">
+            <div class="health-header">
+                <div>
+                    <h2>♥ Health Endpoint</h2>
+                    <p>Check the actual health status returned by Flask.</p>
+                </div>
+
+                <button onclick="loadHealth()">
+                    Refresh Health Status
+                </button>
+            </div>
+
+            <pre id="health-data">Fetching health information...</pre>
+        </section>
+    </main>
+
+    <footer>
+        Built with Flask &nbsp; | &nbsp;
+        Packaged with Docker &nbsp; | &nbsp;
+        DevOps Learning Project
+    </footer>
+
+    <script>
+        async function loadHealth() {
+            const output = document.getElementById("health-data");
+
+            try {
+                const response = await fetch("/health");
+
+                if (!response.ok) {
+                    throw new Error("HTTP " + response.status);
+                }
+
+                const data = await response.json();
+
+                output.textContent = JSON.stringify(data, null, 2);
+
+                document.getElementById("uptime").textContent =
+                    data.uptime_seconds + " seconds";
+
+                document.getElementById("server-time").textContent =
+                    new Date(data.timestamp).toLocaleString();
+
+            } catch (error) {
+                output.textContent = "Health check failed: " + error.message;
+                document.getElementById("uptime").textContent = "Unavailable";
+                document.getElementById("server-time").textContent =
+                    "Unavailable";
+            }
+        }
+
+        loadHealth();
+        setInterval(loadHealth, 5000);
+    </script>
+</body>
+</html>
